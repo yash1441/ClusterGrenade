@@ -11,7 +11,6 @@
 
 #pragma newdecls required
 
-bool Allow = true;
 ConVar ClusterEnable;
 ConVar ClusterNumber;
 ConVar ClusterType;
@@ -76,7 +75,7 @@ public void UpdateGrenades()
 
 public void OnEntityCreated(int iEntity, const char[] classname) 
 {
-	if (StrContains(classname, "_projectile") != -1 && Allow && GetConVarBool(ClusterEnable))
+	if (StrContains(classname, "_projectile") != -1 && GetConVarBool(ClusterEnable))
 	{
 		if(EnableNadeCluster[AllNades])
 		{
@@ -108,19 +107,18 @@ public void OnEntityCreated(int iEntity, const char[] classname)
 public Action OnEntitySpawned(int iGrenade)
 {
 	int client = GetEntPropEnt(iGrenade, Prop_Send, "m_hOwnerEntity");
-	if (IsValidClient(client) && Allow && GetConVarBool(ClusterEnable))
+	if (IsValidClient(client) && Allow[client] && GetConVarBool(ClusterEnable))
 	{
-		Allow = false;
+		Allow[client] = false;
 		char classname[50];
 		GetEdictClassname(iGrenade, classname, sizeof(classname));
 		CreateCluster(client, GetConVarInt(ClusterNumber), classname);
 	}
-	CreateTimer(0.1, AllowAgain);
 }
 
 public Action AllowAgain(Handle timer, any data)
 {
-	Allow = true;
+	Allow[data] = true;
 }
 
 public void CreateCluster(int client, const int number, const char[] classname)
