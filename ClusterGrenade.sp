@@ -11,6 +11,7 @@
 
 #pragma newdecls required
 
+bool Allow[MAXPLAYERS+1] = {true, ...};
 ConVar ClusterEnable;
 ConVar ClusterNumber;
 ConVar ClusterType;
@@ -114,6 +115,7 @@ public Action OnEntitySpawned(int iGrenade)
 		GetEdictClassname(iGrenade, classname, sizeof(classname));
 		CreateCluster(client, GetConVarInt(ClusterNumber), classname);
 	}
+	CreateTimer(0.1, AllowAgain, client);
 }
 
 public Action AllowAgain(Handle timer, any data)
