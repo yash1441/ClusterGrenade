@@ -17,6 +17,16 @@ ConVar ClusterNumber;
 ConVar ClusterType;
 ConVar ClusterRadius;
 
+enum eGrenades {
+	AllNades,
+	HeGrenade,
+	Flashbang,
+	Smoke,
+	Molotov,
+	Decoy
+};
+bool EnableNadeCluster[eGrenades];
+
 public Plugin myinfo = 
 {
 	name = "Cluster Grenade",
@@ -31,35 +41,64 @@ public void OnPluginStart()
 	CreateConVar("sm_cluster_version", PLUGIN_VERSION, "Cluster Grenade Version", FCVAR_DONTRECORD | FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_SPONLY);
 	ClusterEnable = CreateConVar("sm_cluster_enable", "1", "Cluster Grenade enable? 0 = disable, 1 = enable", 0, true, 0.0, true, 1.0);
 	ClusterNumber = CreateConVar("sm_cluster_amount", "3", "Number of grenades in the cluster.", 0, true, 0.0, false);
-	ClusterType = CreateConVar("sm_cluster_type", "1", "0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy.", 0, true, 0.0, true, 5.0);
+	ClusterType = CreateConVar("sm_cluster_type", "1", "0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Seperate by comma for multiple", 0, true, 0.0, true, 5.0);
 	ClusterRadius = CreateConVar("sm_cluster_radius", "7.0", "Radius in which the cluster spawns around the main grenade.", 0, true, 0.0, false);
+	
+	HookConVarChange(ClusterType, OnClusterTypeChange);
+	UpdateGrenades();
+}
+
+public void OnClusterTypeChange(ConVar cvar, char[] oldvalue, char[] newvalue) 
+{
+	UpdateGrenades();
+}
+	
+public void UpdateGrenades() 
+{
+	char buffer[view_as<int>(eGrenades)*8+view_as<int>(eGrenades)];
+	char grenades[eGrenades][8];
+	
+	GetConVarString(ClusterType, buffer, sizeof(buffer));
+	int amountOfStrings = ExplodeString(buffer, ",", grenades, eGrenades, sizeof(grenades[]));
+	
+	//Reset previous
+	for(int i = 0; i < view_as<int>(eGrenades); i++) 
+	{
+		EnableNadeCluster[i] = false;
+	}
+	
+	for(int i = 0; i < amountOfStrings; i++) 
+	{
+		int nade = StringToInt(grenades[i]);
+		EnableNadeCluster[nade] = true;
+	}
 }
 
 public void OnEntityCreated(int iEntity, const char[] classname) 
 {
 	if (StrContains(classname, "_projectile") != -1 && Allow && GetConVarBool(ClusterEnable))
 	{
-		if(GetConVarInt(ClusterType) == 0)
+		if(EnableNadeCluster[AllNades])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
-		else if(StrContains(classname, "hegrenade") != -1 && GetConVarInt(ClusterType) == 1)
+		else if(StrContains(classname, "hegrenade") != -1 && EnableNadeCluster[HeGrenade])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
-		else if(StrContains(classname, "flashbang") != -1 && GetConVarInt(ClusterType) == 2)
+		else if(StrContains(classname, "flashbang") != -1 && EnableNadeCluster[Flashbang])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
-		else if(StrContains(classname, "smoke") != -1 && GetConVarInt(ClusterType) == 3)
+		else if(StrContains(classname, "smoke") != -1 && EnableNadeCluster[Smoke])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
-		else if((StrContains(classname, "molotov") != -1 || StrContains(classname, "incgrenade") != -1) && GetConVarInt(ClusterType) == 4)
+		else if((StrContains(classname, "molotov") != -1 || StrContains(classname, "incgrenade") != -1) && EnableNadeCluster[Molotov])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
-		else if(StrContains(classname, "decoy") != -1 && GetConVarInt(ClusterType) == 5)
+		else if(StrContains(classname, "decoy") != -1 && EnableNadeCluster[Decoy])
 		{
 			SDKHook(iEntity, SDKHook_SpawnPost, OnEntitySpawned);
 		}
