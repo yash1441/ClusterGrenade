@@ -3,7 +3,7 @@
 #define DEBUG
 
 #define PLUGIN_AUTHOR "Simon"
-#define PLUGIN_VERSION "1.8"
+#define PLUGIN_VERSION "1.9"
 
 #include <sourcemod>
 #include <sdktools>
@@ -88,14 +88,11 @@ public void CreateCluster(int client, const int number, const char[] classname)
 {
 	float angles[3];
 	float[][] ang = new float[number][3];
-	//float ang[number][3];
 	float pos[3];
-	float[][] vel = new float[number][3];
-	//float vel[3][3];
+	float vel[3];
 	GetClientEyeAngles(client, angles);
 	GetClientEyePosition(client, pos);
 	int[] GEntities = new int[number];
-	//int GEntities[3];
 	float g_fSpin[3] =  { 4877.4, 0.0, 0.0 };
 	float fPVelocity[3];
 	for (int i = 0; i < number; i++)
@@ -106,15 +103,11 @@ public void CreateCluster(int client, const int number, const char[] classname)
 		temp_ang[0] = ang[i][0];
 		temp_ang[1] = ang[i][1];
 		temp_ang[2] = ang[i][2];
-		float temp_vel[3];
-		temp_vel[0] = vel[i][0];
-		temp_vel[1] = vel[i][1];
-		temp_vel[2] = vel[i][2];
-		GetAngleVectors(temp_ang, temp_vel, NULL_VECTOR, NULL_VECTOR);
-		ScaleVector(temp_vel, 1250.0);
+		GetAngleVectors(temp_ang, vel, NULL_VECTOR, NULL_VECTOR);
+		ScaleVector(vel, 1250.0);
 		GEntities[i] = CreateEntityByName(classname);
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fPVelocity);
-		AddVectors(temp_vel, fPVelocity, temp_vel);
+		AddVectors(vel, fPVelocity, vel);
 		
 		SetEntPropVector(GEntities[i], Prop_Data, "m_vecAngVelocity", g_fSpin);
 		SetEntPropEnt(GEntities[i], Prop_Data, "m_hThrower", client);
@@ -126,7 +119,7 @@ public void CreateCluster(int client, const int number, const char[] classname)
 		AcceptEntityInput(GEntities[i], "FireUser1", GEntities[i]);
 		if (DispatchSpawn(GEntities[i]))
 		{
-			TeleportEntity(GEntities[i], pos, temp_ang, temp_vel);
+			TeleportEntity(GEntities[i], pos, temp_ang, vel);
 		}
 	}
 }
