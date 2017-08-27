@@ -2,8 +2,8 @@
 
 #define DEBUG
 
-#define PLUGIN_AUTHOR "Simon"
-#define PLUGIN_VERSION "1.9"
+#define PLUGIN_AUTHOR "Simon -edit by Deathknife"
+#define PLUGIN_VERSION "2.0"
 
 #include <sourcemod>
 #include <sdktools>
