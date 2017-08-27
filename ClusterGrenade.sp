@@ -3,7 +3,7 @@
 #define DEBUG
 
 #define PLUGIN_AUTHOR "Simon -edit by Deathknife"
-#define PLUGIN_VERSION "2.1"
+#define PLUGIN_VERSION "2.2"
 
 #include <sourcemod>
 #include <sdktools>
@@ -152,6 +152,10 @@ public void CreateCluster(int client, const int number, const char[] classname)
 		SetEntPropEnt(GEntities[i], Prop_Data, "m_hThrower", client);
 		SetEntPropEnt(GEntities[i], Prop_Data, "m_hOwnerEntity", client);
 		SetEntProp(GEntities[i], Prop_Send, "m_iTeamNum", GetClientTeam(client));
+		if(StrContains(classname, "smoke") != -1)
+		{
+			CreateTimer(1.5, SmokeOn, GEntities[i]);
+		}
 		if(StrContains(classname, "hegrenade") != -1)
 		{
 			SetEntPropFloat(GEntities[i], Prop_Send, "m_DmgRadius", 350.0);
@@ -164,6 +168,17 @@ public void CreateCluster(int client, const int number, const char[] classname)
 			TeleportEntity(GEntities[i], pos, temp_ang, vel);
 		}
 	}
+}
+
+public Action SmokeOn(Handle timer, int ent)
+{
+	SetEntProp(ent, Prop_Send, "m_bDidSmokeEffect", true);
+	CreateTimer(18.0, SmokeOff, ent);
+}
+
+public Action SmokeOff(Handle timer, int ent)
+{
+	RemoveEdict(ent);
 }
 
 stock bool IsValidClient(int client)
