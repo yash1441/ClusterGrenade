@@ -3,7 +3,7 @@
 #define DEBUG
 
 #define PLUGIN_AUTHOR "Simon -edit by Deathknife"
-#define PLUGIN_VERSION "2.0"
+#define PLUGIN_VERSION "2.1"
 
 #include <sourcemod>
 #include <sdktools>
@@ -41,7 +41,7 @@ public void OnPluginStart()
 	CreateConVar("sm_cluster_version", PLUGIN_VERSION, "Cluster Grenade Version", FCVAR_DONTRECORD | FCVAR_NOTIFY | FCVAR_REPLICATED | FCVAR_SPONLY);
 	ClusterEnable = CreateConVar("sm_cluster_enable", "1", "Cluster Grenade enable? 0 = disable, 1 = enable", 0, true, 0.0, true, 1.0);
 	ClusterNumber = CreateConVar("sm_cluster_amount", "3", "Number of grenades in the cluster.", 0, true, 0.0, false);
-	ClusterType = CreateConVar("sm_cluster_type", "1", "0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Seperate by comma for multiple", 0, true, 0.0, true, 5.0);
+	ClusterType = CreateConVar("sm_cluster_type", "1", "0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Separate by comma for multiple", 0, true, 0.0, true, 5.0);
 	ClusterRadius = CreateConVar("sm_cluster_radius", "7.0", "Radius in which the cluster spawns around the main grenade.", 0, true, 0.0, false);
 	
 	HookConVarChange(ClusterType, OnClusterTypeChange);
@@ -152,8 +152,11 @@ public void CreateCluster(int client, const int number, const char[] classname)
 		SetEntPropEnt(GEntities[i], Prop_Data, "m_hThrower", client);
 		SetEntPropEnt(GEntities[i], Prop_Data, "m_hOwnerEntity", client);
 		SetEntProp(GEntities[i], Prop_Send, "m_iTeamNum", GetClientTeam(client));
-		SetEntPropFloat(GEntities[i], Prop_Send, "m_DmgRadius", 350.0);
-		SetEntPropFloat(GEntities[i], Prop_Send, "m_flDamage", 99.0);
+		if(StrContains(classname, "hegrenade") != -1)
+		{
+			SetEntPropFloat(GEntities[i], Prop_Send, "m_DmgRadius", 350.0);
+			SetEntPropFloat(GEntities[i], Prop_Send, "m_flDamage", 99.0);
+		}
 		AcceptEntityInput(GEntities[i], "InitializeSpawnFromWorld");
 		AcceptEntityInput(GEntities[i], "FireUser1", GEntities[i]);
 		if (DispatchSpawn(GEntities[i]))
