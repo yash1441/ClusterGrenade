@@ -47,7 +47,7 @@ public void OnPluginStart()
 	bEnable = CVar.BoolValue;
 	(CVar = CreateConVar("sm_cluster_amount",	"3",	"Number of grenades in the cluster.", FCVAR_NOTIFY, true, 1.0, true, 20.0)).AddChangeHook(CVarChanged_Number);
 	iAmount = CVar.IntValue;
-	(CVar = CreateConVar("sm_cluster_type",		"1",	"0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Use: e.g. '125' (HE+Flashbang+Decoy) for multiple types", FCVAR_NOTIFY)).AddChangeHook(CVarChanged_Type);
+	(CVar = CreateConVar("sm_cluster_type",		"1",	"0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Use: e.g. '1523' (HE+Flashbang+Decoy) for multiple types", FCVAR_NOTIFY)).AddChangeHook(CVarChanged_Type);
 	CVar.GetString(sType, sizeof(sType));
 	(CVar = CreateConVar("sm_cluster_radius",	"7.0",	"Radius in which the cluster spawns around the main grenade.", FCVAR_NOTIFY, true)).AddChangeHook(CVarChanged_Radius);
 	fRadius = CVar.FloatValue;
@@ -85,7 +85,7 @@ public void UpdateGrenades()
 	int i;
 	while(sType[i])
 	{
-		if(29 < sType[i] < 36) EnableNadeCluster[sType[i] - 30] = true;
+		if('0' < sType[i] < '5') EnableNadeCluster[sType[i] - '0'] = true;
 		i++;
 	}
 }
