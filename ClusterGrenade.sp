@@ -92,7 +92,7 @@ public void UpdateGrenades()
 
 public void OnEntityCreated(int ent, const char[] classname)
 {
-	if(bEnable || StrContains(classname, "_projectile") < 5) return;
+	if(!bEnable || StrContains(classname, "_projectile") < 0) return;
 
 	if(EnableNadeCluster[AllNades]
 	|| (!StrContains(classname, "hegrenade") && EnableNadeCluster[HeGrenade])
