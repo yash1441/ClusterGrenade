@@ -12,13 +12,6 @@ static const char	PLUGIN_NAME[]		= "Cluster Grenade",
 					PLUGIN_VERSION[]	= "2.3.0",
 					PLUGIN_AUTHOR[]		= "Simon, Deathknife (rewritten by Grey83)";
 
-bool bEnable;
-int iAmount;
-char sType[6];
-float fRadius;
-
-bool Allow[MAXPLAYERS+1] = {true, ...};
-
 enum eGrenades {
 	AllNades,
 	HeGrenade,
@@ -27,7 +20,14 @@ enum eGrenades {
 	Molotov,
 	Decoy
 };
-bool EnableNadeCluster[eGrenades];
+
+bool bEnable,
+	bClusterEnable[eGrenades];
+int iAmount;
+char sType[5];
+float fRadius;
+
+bool Allow[MAXPLAYERS+1] = {true, ...};
 
 public Plugin myinfo =
 {
@@ -47,9 +47,9 @@ public void OnPluginStart()
 	bEnable = CVar.BoolValue;
 	(CVar = CreateConVar("sm_cluster_amount",	"3",	"Number of grenades in the cluster.", FCVAR_NOTIFY, true, 1.0, true, 20.0)).AddChangeHook(CVarChanged_Number);
 	iAmount = CVar.IntValue;
-	(CVar = CreateConVar("sm_cluster_type",		"1",	"0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Use: e.g. '1523' (HE+Flashbang+Decoy) for multiple types", FCVAR_NOTIFY)).AddChangeHook(CVarChanged_Type);
+	(CVar = CreateConVar("sm_cluster_type",		"1",	"0 = All, 1 = HE, 2 = Flashbang, 3 = Smoke, 4 = Molotov / Incendiary, 5 = Decoy. Use: e.g. '1523' (HE+Flashbang+Decoy) for multiple types", FCVAR_NOTIFY, true, 0.0, true, 5555.0)).AddChangeHook(CVarChanged_Type);
 	CVar.GetString(sType, sizeof(sType));
-	(CVar = CreateConVar("sm_cluster_radius",	"7.0",	"Radius in which the cluster spawns around the main grenade.", FCVAR_NOTIFY, true)).AddChangeHook(CVarChanged_Radius);
+	(CVar = CreateConVar("sm_cluster_radius",	"7.0",	"Radius in which the cluster spawns around the main grenade.", FCVAR_NOTIFY, true, 1.0)).AddChangeHook(CVarChanged_Radius);
 	fRadius = CVar.FloatValue;
 
 	UpdateGrenades();
@@ -76,30 +76,30 @@ public void CVarChanged_Type(ConVar CVar, char[] oldvalue, char[] newvalue)
 	UpdateGrenades();
 }
 
-public void UpdateGrenades()
+stock void UpdateGrenades()
 {
 	//Reset previous
-	for(int i; i < view_as<int>(eGrenades); i++) EnableNadeCluster[i] = false;
+	for(int i; i < view_as<int>(eGrenades); i++) bClusterEnable[i] = false;
 	if(!sType[0]) return;
 
 	int i;
 	while(sType[i])
 	{
-		if('0' < sType[i] < '5') EnableNadeCluster[sType[i] - '0'] = true;
+		if('/' < sType[i] < '6') bClusterEnable[sType[i] - '0'] = true;
 		i++;
 	}
 }
 
-public void OnEntityCreated(int ent, const char[] classname)
+public void OnEntityCreated(int ent, const char[] class)
 {
-	if(!bEnable || StrContains(classname, "_projectile") < 0) return;
+	if(!bEnable || StrContains(class, "_projectile") < 0) return;
 
-	if(EnableNadeCluster[AllNades]
-	|| (!StrContains(classname, "hegrenade") && EnableNadeCluster[HeGrenade])
-	|| (!StrContains(classname, "flashbang") && EnableNadeCluster[Flashbang])
-	|| (!StrContains(classname, "smoke") && EnableNadeCluster[Smoke])
-	|| ((!StrContains(classname, "molotov") || !StrContains(classname, "incgrenade")) && EnableNadeCluster[Molotov])
-	|| (!StrContains(classname, "decoy") && EnableNadeCluster[Decoy]))
+	if((bClusterEnable[AllNades]	&& class[0] != 't')
+	|| (bClusterEnable[HeGrenade]	&& class[0] == 'h')
+	|| (bClusterEnable[Flashbang]	&& class[0] == 'f')
+	|| (bClusterEnable[Smoke]		&& class[0] == 's')
+	|| (bClusterEnable[Molotov]		&& (class[0] == 'i' || class[0] == 'm'))
+	|| (bClusterEnable[Decoy])		&& class[0] == 'd')
 		SDKHook(ent, SDKHook_SpawnPost, OnEntitySpawned);
 }
 
@@ -112,9 +112,9 @@ public void OnEntitySpawned(int ent)
 	if(IsValidClient(client) && Allow[client])
 	{
 		Allow[client] = false;
-		char classname[50];
-		GetEdictClassname(ent, classname, sizeof(classname));
-		CreateCluster(client, classname);
+		char class[50];
+		GetEdictClassname(ent, class, sizeof(class));
+		CreateCluster(client, class);
 	}
 	CreateTimer(0.1, AllowAgain, client);
 }
@@ -126,20 +126,19 @@ public Action AllowAgain(Handle timer, any client)
 
 static const float m_vecAngVelocity[] = {4877.4, 0.0, 0.0};
 
-public void CreateCluster(int client, const char[] classname)
+stock void CreateCluster(int client, const char[] class)
 {
-	static float angles[3], pos[3];
+	static int ent;
+	static float angles[3], pos[3], ang[3], vel[3], fPVelocity[3];
 	GetClientEyeAngles(client, angles);
 	GetClientEyePosition(client, pos);
 	for(int i; i < iAmount; i++)
 	{
-		static int ent;
-		static float ang[3], vel[3], fPVelocity[3];
 		ang[0] = angles[0] + GetRandomFloat(fRadius * -1.0, fRadius);
 		ang[1] = angles[1] + GetRandomFloat(fRadius * -1.0, fRadius);
 		GetAngleVectors(ang, vel, NULL_VECTOR, NULL_VECTOR);
 		ScaleVector(vel, 1250.0);
-		ent = CreateEntityByName(classname);
+		ent = CreateEntityByName(class);
 		GetEntPropVector(client, Prop_Data, "m_vecVelocity", fPVelocity);
 		AddVectors(vel, fPVelocity, vel);
 
@@ -147,12 +146,14 @@ public void CreateCluster(int client, const char[] classname)
 		SetEntPropEnt(ent, Prop_Data, "m_hThrower", client);
 		SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
 		SetEntProp(ent, Prop_Send, "m_iTeamNum", GetClientTeam(client));
-		if(!StrContains(classname, "smoke"))
-			CreateTimer(1.5, SmokeOn, EntIndexToEntRef(ent));
-		else if(!StrContains(classname, "hegrenade"))
+		switch(class[0])
 		{
-			SetEntPropFloat(ent, Prop_Send, "m_DmgRadius", 350.0);
-			SetEntPropFloat(ent, Prop_Send, "m_flDamage", 99.0);
+			case 's': CreateTimer(1.5, SmokeOn, EntIndexToEntRef(ent));
+			case 'h':
+			{
+				SetEntPropFloat(ent, Prop_Send, "m_DmgRadius", 350.0);
+				SetEntPropFloat(ent, Prop_Send, "m_flDamage", 99.0);
+			}
 		}
 		AcceptEntityInput(ent, "InitializeSpawnFromWorld");
 		AcceptEntityInput(ent, "FireUser1", ent);
